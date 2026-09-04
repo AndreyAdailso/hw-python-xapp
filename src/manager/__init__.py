@@ -21,4 +21,5 @@ from .SdlAlarmManager import SdlAlarmManager
 from .SdlManager import SdlManager
 from .SubscriptionManager import SubscriptionManager
 from .MetricManager import MetricManager
+from .ControlManager import ControlManager
 

@@ -5,9 +5,9 @@
         {
             "name": "hw-python",
             "image": {
-                "registry": "127.0.0.1:32000",
+                "registry": "127.0.0.1:5001",
                 "name": "hw-python",
-                "tag": "latest"
+                "tag": "1.0.0"
             }
         }
     ],
@@ -29,8 +29,8 @@
                 "name": "rmrdata",
                 "container": "hw-python",
                 "port": 4560,
-                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "A1_POLICY_REQ", "RIC_INDICATION"],
-                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP"],
+                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "A1_POLICY_REQ", "RIC_INDICATION", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE"],
+                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP", "RIC_CONTROL_REQ"],
                 "policies": [1],
                 "description": "rmr data port for hw-python"
             }
@@ -40,8 +40,8 @@
         "protPort": "tcp:4560",
         "maxSize": 2072,
         "numWorkers": 1,
-        "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "A1_POLICY_REQ", "RIC_INDICATION"],
-        "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP"],
+        "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "A1_POLICY_REQ", "RIC_INDICATION", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE"],
+        "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP", "RIC_CONTROL_REQ"],
         "policies": [1]
     },
     "controls": {

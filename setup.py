@@ -32,9 +32,9 @@ setup(
     description="Hello World Python XAPP for O-RAN RIC Platform",
     long_description=read('README.md'),
     author='Naman Gupta',
-    author_email='naman.gupta@samsung.com',
-    python_requires='>=3.8',
     install_requires=["ricxappframe==3.2.2", "six", "pycrate==0.7.5"],
+    package_data={"src.asn1": ["*.asn", "*.asn1"]},
+    include_package_data=True,
     entry_points={"console_scripts": ["run-hw-python.py=src.main:launchXapp"]},  # adds a magical entrypoint for Docker
     data_files=[("", ["LICENSE.txt"])],
 )

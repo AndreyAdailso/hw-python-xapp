@@ -101,7 +101,7 @@ class SubscriptionManager(_BaseManager):
                 "RMRPort": self.rmrdata_port
             },
             "Meid": meid,
-            "RANFunctionID": 0,
+            "RANFunctionID": Constants.KPM_RAN_FUNCTION_ID,
             "SubscriptionDetails": [{
                 "XappEventInstanceId": 12345,
                 # "EventTriggers": [1],
@@ -164,7 +164,7 @@ class SubscriptionManager(_BaseManager):
                                                 FrameConstants.DEFAULT_XAPP_NS)
         http_port = self.http_port
         rmr_port = self.rmrdata_port
-        ran_func_id = 0
+        ran_func_id = Constants.KPM_RAN_FUNCTION_ID
 
         event_triggers = self._build_event_trigger_definition_format1()
         action_definition = self._build_action_definition_format1()
@@ -228,15 +228,13 @@ class SubscriptionManager(_BaseManager):
             Returns a list of integers that represents the ASN1-encoded action definition
         """
         metrics = [
-            "DRB.RlcSduTransmittedVolumeDL-Filter",
-            "DRB.RlcSduTransmittedVolumeUL-Filter",
-            "DRB.PerDataVolumeDLDist.Bin ",
-            "DRB.PerDataVolumeULDist.Bin",
-            "DRB.RlcPacketDropRateDLDist",
-            "DRB.PacketLossRateULDist",
-            "L1M.DL-SS-RSRP.SSB",
-            "L1M.DL-SS-SINR.SSB",
-            "L1M.UL-SRS-RSRP"
+            "DRB.PdcpSduVolumeDL",
+            "DRB.PdcpSduVolumeUL",
+            "RRU.PrbUsedDl",
+            "RRU.PrbUsedUl",
+            "RRU.PrbAvailDl",
+            "RRU.PrbTotDl",
+            "DRB.UEThpDl",
         ]
 
         action_fmt1 = dict()
