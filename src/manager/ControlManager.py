@@ -23,17 +23,26 @@ from ricxappframe.xapp_frame import RMRXapp, rmr
 from ._BaseManager import _BaseManager
 from ..utils.constants import Constants
 from ..asn1.e2ap import E2AP_PDU_Descriptions
+from ..asn1 import pycrate_recursion_fix  # noqa: F401  (recursive RANParameter types)
 from ..asn1.rc import E2SM_RC_IEs
 
 
 class ControlManager(_BaseManager):
 
-    def __init__(self, rmr_xapp: RMRXapp):
+    def __init__(self, rmr_xapp: RMRXapp, ric_instance_id: int = 1):
         super().__init__(rmr_xapp)
+        # ricInstanceID dos RICcontrolRequest. O e2term usa este valor como RMR sub_id do
+        # ACK/FAILURE; com a rota 12041/12042|<id> registrada pelo ControlRouteManager,
+        # o retorno chega so a este xApp.
+        self.ric_instance_id = int(ric_instance_id)
 
-    def encode_control_header(self, amf_ue_ngap_id: int = 1, style_type: int = 1, action_id: int = 6) -> bytes:
+    def encode_control_header(self, amf_ue_ngap_id: int = 1,
+                              style_type: int = Constants.RC_STYLE_TYPE_RADIO_RESOURCE_ALLOCATION,
+                              action_id: int = Constants.RC_ACTION_ID_SLICE_PRB_QUOTA) -> bytes:
         """
-        Encodes E2SM-RC Control Header Format 1 (Style 1: Radio Bearer Control, Action 6: Slice-level PRB quota).
+        Encodes E2SM-RC Control Header Format 1.
+        Default: Style 2 (Radio Resource Allocation Control), Action 6 (Slice-level PRB quota),
+        as defined in O-RAN.WG3.E2SM-RC v03.00 section 7.6.3.
         """
         header = E2SM_RC_IEs.E2SM_RC_ControlHeader
         hdr_val = {
@@ -55,59 +64,86 @@ class ControlManager(_BaseManager):
         header.set_val(hdr_val)
         return header.to_aper()
 
+    @staticmethod
+    def _element(param_id: int, value) -> dict:
+        return {
+            'ranParameter-ID': param_id,
+            'ranParameter-valueType': ('ranP-Choice-ElementFalse', {
+                'ranParameter-value': value
+            })
+        }
+
+    @staticmethod
+    def _structure(param_id: int, items: list) -> dict:
+        return {
+            'ranParameter-ID': param_id,
+            'ranParameter-valueType': ('ranP-Choice-Structure', {
+                'ranParameter-Structure': {'sequence-of-ranParameters': items}
+            })
+        }
+
+    @staticmethod
+    def _list(param_id: int, structures: list) -> dict:
+        return {
+            'ranParameter-ID': param_id,
+            'ranParameter-valueType': ('ranP-Choice-List', {
+                'ranParameter-List': {
+                    'list-of-ranParameter': [{'sequence-of-ranParameters': s} for s in structures]
+                }
+            })
+        }
+
     def encode_control_message(self, slice_quotas: list) -> bytes:
         """
-        Encodes E2SM-RC Control Message Format 1 with slice PRB quotas.
+        Encodes E2SM-RC Control Message Format 1 for Slice-level PRB quota, following the
+        RAN Parameter hierarchy of O-RAN.WG3.E2SM-RC v03.00 section 8.4.3.6:
+
+        1 RRM Policy Ratio List
+          2 RRM Policy Ratio Group (one per slice)
+            3 RRM Policy
+              5 RRM Policy Member List
+                6 RRM Policy Member
+                  7 PLMN Identity (optional here)
+                  8 S-NSSAI: 9 SST, 10 SD (optional)
+            11 Min PRB Policy Ratio
+            12 Max PRB Policy Ratio
+            13 Dedicated PRB Policy Ratio
         """
-        list_of_ran_parameter = []
+        C = Constants
+        groups = []
         for policy in slice_quotas:
-            sst = policy.get("sst", 1)
+            sst = int(policy.get("sst", 1))
             max_prb = int(policy.get("max_prb", 100))
             min_prb = int(policy.get("min_prb", 0))
             dedicated_prb = int(policy.get("dedicated_prb", 0))
+            sd = policy.get("sd")
+            plmn = policy.get("plmn", C.RC_PLMN_IDENTITY)
 
-            slice_params = [
-                {
-                    'ranParameter-ID': 3,
-                    'ranParameter-valueType': ('ranP-Choice-ElementTrue', {
-                        'ranParameter-value': ('valueOctS', bytes([sst]))
-                    })
-                },
-                {
-                    'ranParameter-ID': 4,
-                    'ranParameter-valueType': ('ranP-Choice-ElementTrue', {
-                        'ranParameter-value': ('valueInt', max_prb)
-                    })
-                },
-                {
-                    'ranParameter-ID': 5,
-                    'ranParameter-valueType': ('ranP-Choice-ElementTrue', {
-                        'ranParameter-value': ('valueInt', min_prb)
-                    })
-                },
-                {
-                    'ranParameter-ID': 6,
-                    'ranParameter-valueType': ('ranP-Choice-ElementTrue', {
-                        'ranParameter-value': ('valueInt', dedicated_prb)
-                    })
-                }
-            ]
+            snssai = [self._element(C.RC_PARAM_SST, ('valueOctS', bytes([sst])))]
+            if sd is not None:
+                snssai.append(self._element(C.RC_PARAM_SD, ('valueOctS', int(sd).to_bytes(3, 'big'))))
 
-            list_of_ran_parameter.append({
-                'sequence-of-ranParameters': slice_params
-            })
+            member = []
+            if plmn:
+                plmn_bytes = bytes.fromhex(plmn) if isinstance(plmn, str) else bytes(plmn)
+                member.append(self._element(C.RC_PARAM_PLMN_IDENTITY, ('valueOctS', plmn_bytes)))
+            member.append(self._structure(C.RC_PARAM_S_NSSAI, snssai))
+
+            rrm_policy = self._structure(C.RC_PARAM_RRM_POLICY, [
+                self._list(C.RC_PARAM_RRM_POLICY_MEMBER_LIST, [member])
+            ])
+
+            groups.append([
+                rrm_policy,
+                self._element(C.RC_PARAM_MIN_PRB_RATIO, ('valueInt', min_prb)),
+                self._element(C.RC_PARAM_MAX_PRB_RATIO, ('valueInt', max_prb)),
+                self._element(C.RC_PARAM_DEDICATED_PRB_RATIO, ('valueInt', dedicated_prb)),
+            ])
 
         message = E2SM_RC_IEs.E2SM_RC_ControlMessage
         msg_val = {
             'ric-controlMessage-formats': ('controlMessage-Format1', {
-                'ranP-List': [{
-                    'ranParameter-ID': 1,
-                    'ranParameter-valueType': ('ranP-Choice-List', {
-                        'ranParameter-List': {
-                            'list-of-ranParameter': list_of_ran_parameter
-                        }
-                    })
-                }]
+                'ranP-List': [self._list(C.RC_PARAM_RRM_POLICY_RATIO_LIST, groups)]
             })
         }
         message.set_val(msg_val)
@@ -120,7 +156,7 @@ class ControlManager(_BaseManager):
         """
         header_bytes = self.encode_control_header(
             amf_ue_ngap_id=1,
-            style_type=Constants.RC_STYLE_TYPE_RADIO_BEARER,
+            style_type=Constants.RC_STYLE_TYPE_RADIO_RESOURCE_ALLOCATION,
             action_id=Constants.RC_ACTION_ID_SLICE_PRB_QUOTA
         )
 
@@ -131,7 +167,7 @@ class ControlManager(_BaseManager):
             'criticality': 'ignore',
             'value': ('RICcontrolRequest', {
                 'protocolIEs': [
-                    {'id': 29, 'criticality': 'reject', 'value': ('RICrequestID', {'ricRequestorID': 1001, 'ricInstanceID': 1})},
+                    {'id': 29, 'criticality': 'reject', 'value': ('RICrequestID', {'ricRequestorID': 1001, 'ricInstanceID': self.ric_instance_id})},
                     {'id': 5,  'criticality': 'reject', 'value': ('RANfunctionID', Constants.RC_RAN_FUNCTION_ID)},
                     {'id': 22, 'criticality': 'reject', 'value': ('RICcontrolHeader', header_bytes)},
                     {'id': 23, 'criticality': 'reject', 'value': ('RICcontrolMessage', message_bytes)},
@@ -152,7 +188,7 @@ class ControlManager(_BaseManager):
         self.logger.info("======================================================================")
         self.logger.info(f"[RC-CONTROL-COMMAND] Enviando RICcontrolRequest -> Node: {meid}")
         self.logger.info("----------------------------------------------------------------------")
-        self.logger.info(f"  RANFunctionID: {Constants.RC_RAN_FUNCTION_ID} | Style: {Constants.RC_STYLE_TYPE_RADIO_BEARER} | ActionID: {Constants.RC_ACTION_ID_SLICE_PRB_QUOTA} (Slice PRB Quota)")
+        self.logger.info(f"  RANFunctionID: {Constants.RC_RAN_FUNCTION_ID} | Style: {Constants.RC_STYLE_TYPE_RADIO_RESOURCE_ALLOCATION} | ActionID: {Constants.RC_ACTION_ID_SLICE_PRB_QUOTA} (Slice PRB Quota)")
         for q in slice_quotas:
             sst = q.get("sst", 1)
             name = "eMBB" if sst == 1 else ("URLLC" if sst == 2 else f"Slice-{sst}")

@@ -22,4 +22,5 @@ from .SdlManager import SdlManager
 from .SubscriptionManager import SubscriptionManager
 from .MetricManager import MetricManager
 from .ControlManager import ControlManager
+from .ControlRouteManager import ControlRouteManager
 

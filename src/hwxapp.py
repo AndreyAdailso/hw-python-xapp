@@ -37,6 +37,7 @@ class HWXapp:
         self._control_mgr = None
         self._sub_mgr = None
         self._control_thread = None
+        self._route_mgr = None
         self._rmr_xapp = RMRXapp(self._default_handler,
                                  config_handler=self._handle_config_change,
                                  rmr_port=4560,
@@ -55,7 +56,11 @@ class HWXapp:
         sdl_mgr.sdlGetNodeBList()
 
         self._sub_mgr = SubscriptionManager(rmr_xapp)
-        self._control_mgr = ControlManager(rmr_xapp)
+        controls = (getattr(rmr_xapp, "config", None) or {}).get("controls", {})
+        routing_cfg = controls.get("control_routing", {})
+        self._route_mgr = ControlRouteManager(rmr_xapp, xapp_name="rc-python", config=routing_cfg)
+        self._route_mgr.start()
+        self._control_mgr = ControlManager(rmr_xapp, ric_instance_id=self._route_mgr.ric_instance_id)
 
         # 1. Enviar subscrição KPM (RANFunctionID=200) para todos os nós E2 registrados
         enb_list = self._sub_mgr.get_enb_list()
@@ -157,6 +162,8 @@ class HWXapp:
         """
         self._rmr_xapp.logger.info("Shutting down hw-python xApp...")
         self._shutdown = True
+        if self._route_mgr:
+            self._route_mgr.stop()
         if self._sub_mgr:
             self._sub_mgr.unsubscribe()
         self._rmr_xapp.stop()

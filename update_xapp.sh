@@ -3,7 +3,7 @@
 set -e
 
 namespace="ricxapp"
-xapp_name="hw-python"
+xapp_name="rc-python"
 version="1.0.0"
 
 echo "================================================="

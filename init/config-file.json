@@ -1,12 +1,12 @@
 {
-    "name": "hw-python",
+    "name": "rc-python",
     "version": "1.0.0",
     "containers": [
         {
-            "name": "hw-python",
+            "name": "rc-python",
             "image": {
                 "registry": "127.0.0.1:5001",
-                "name": "hw-python",
+                "name": "rc-python",
                 "tag": "1.0.0"
             }
         }
@@ -15,24 +15,41 @@
         "ports": [
             {
                 "name": "http",
-                "container": "hw-python",
+                "container": "rc-python",
                 "port": 8080,
                 "description": "http service"
             },
             {
                 "name": "rmrroute",
-                "container": "hw-python",
+                "container": "rc-python",
                 "port": 4561,
-                "description": "rmr route port for hw-python xapp"
+                "description": "rmr route port for rc-python xapp"
             },
             {
                 "name": "rmrdata",
-                "container": "hw-python",
+                "container": "rc-python",
                 "port": 4560,
-                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "A1_POLICY_REQ", "RIC_INDICATION", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE"],
-                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP", "RIC_CONTROL_REQ"],
-                "policies": [1],
-                "description": "rmr data port for hw-python"
+                "rxMessages": [
+                    "RIC_SUB_RESP",
+                    "RIC_SUB_FAILURE",
+                    "RIC_SUB_DEL_RESP",
+                    "A1_POLICY_REQ",
+                    "RIC_INDICATION",
+                    "RIC_CONTROL_ACK",
+                    "RIC_CONTROL_FAILURE"
+                ],
+                "txMessages": [
+                    "RIC_SUB_REQ",
+                    "RIC_SUB_DEL_REQ",
+                    "A1_POLICY_RESP",
+                    "A1_POLICY_QUERY",
+                    "RIC_HEALTH_CHECK_RESP",
+                    "RIC_CONTROL_REQ"
+                ],
+                "policies": [
+                    1
+                ],
+                "description": "rmr data port for rc-python"
             }
         ]
     },
@@ -40,14 +57,39 @@
         "protPort": "tcp:4560",
         "maxSize": 2072,
         "numWorkers": 1,
-        "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "A1_POLICY_REQ", "RIC_INDICATION", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE"],
-        "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP", "RIC_CONTROL_REQ"],
-        "policies": [1]
+        "rxMessages": [
+            "RIC_SUB_RESP",
+            "RIC_SUB_FAILURE",
+            "RIC_SUB_DEL_RESP",
+            "A1_POLICY_REQ",
+            "RIC_INDICATION",
+            "RIC_CONTROL_ACK",
+            "RIC_CONTROL_FAILURE"
+        ],
+        "txMessages": [
+            "RIC_SUB_REQ",
+            "RIC_SUB_DEL_REQ",
+            "A1_POLICY_RESP",
+            "A1_POLICY_QUERY",
+            "RIC_HEALTH_CHECK_RESP",
+            "RIC_CONTROL_REQ"
+        ],
+        "policies": [
+            1
+        ]
     },
     "controls": {
-        "fileStrorage": false
+        "fileStrorage": false,
+        "control_routing": {
+            "enabled": true,
+            "ric_instance_id": 65535,
+            "rtmgr_url": "http://service-ricplt-rtmgr-http.ricplt:3800",
+            "xapp_namespace": "ricxapp",
+            "retry_seconds": 10,
+            "refresh_seconds": 60
+        }
     },
-    "db" : {
+    "db": {
         "waitForSdl": false
     }
 }

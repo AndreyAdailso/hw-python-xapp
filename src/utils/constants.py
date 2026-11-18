@@ -39,8 +39,25 @@ class Constants:
     KPM_RAN_FUNCTION_ID = 200
     RC_RAN_FUNCTION_ID = 300
 
-    RC_STYLE_TYPE_RADIO_BEARER = 1
+    # E2SM-RC v03.00 section 7.6.3: CONTROL Service Style 2 (Radio Resource Allocation Control),
+    # Control Action 6 (Slice-level PRB quota)
+    RC_STYLE_TYPE_RADIO_RESOURCE_ALLOCATION = 2
     RC_ACTION_ID_SLICE_PRB_QUOTA = 6
+    # E2SM-RC v03.00 section 8.4.3.6: RAN Parameter IDs for Slice-level PRB quota
+    RC_PARAM_RRM_POLICY_RATIO_LIST = 1
+    RC_PARAM_RRM_POLICY_RATIO_GROUP = 2
+    RC_PARAM_RRM_POLICY = 3
+    RC_PARAM_RRM_POLICY_MEMBER_LIST = 5
+    RC_PARAM_RRM_POLICY_MEMBER = 6
+    RC_PARAM_PLMN_IDENTITY = 7
+    RC_PARAM_S_NSSAI = 8
+    RC_PARAM_SST = 9
+    RC_PARAM_SD = 10
+    RC_PARAM_MIN_PRB_RATIO = 11
+    RC_PARAM_MAX_PRB_RATIO = 12
+    RC_PARAM_DEDICATED_PRB_RATIO = 13
+    # PLMN Identity (3 octets, TS 38.473) sent in each RRM Policy Member; None = omitted
+    RC_PLMN_IDENTITY = None
 
     DEFAULT_HTTP_PORT = 8080
     DEFAULT_RMRROUTE_PORT = 4561
